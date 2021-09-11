@@ -1,0 +1,7 @@
+name: Superaxe
+version: '${project.version}'
+main: com.derek.Superaxe
+api-version: 1.17
+author: LaDerek
+description: A plugin allowing players to craft an axe that can fell entire trees in one go.
+website: dev.mcnight.ru

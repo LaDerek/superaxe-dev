@@ -1,0 +1,66 @@
+package com.derek;
+
+import org.bukkit.GameMode;
+import org.bukkit.block.Block;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.Damageable;
+
+import java.util.List;
+import java.util.Objects;
+
+public class Events implements Listener {
+
+    public Superaxe item;
+    public final FileConfiguration config;
+    public Events(FileConfiguration configuration, Superaxe item) {
+        this.config = configuration;
+        this.item = item;
+    }
+
+    Methods m = new Methods();
+
+    @EventHandler
+    public void onBlockBreak(BlockBreakEvent event) {
+        //tool.getType().name().endsWith("_AXE")
+        //player.getInventory().getItemInMainHand().equals(item.superaxe)
+        //Objects.equals(tool.getItemMeta(), item.superaxe.getItemMeta())
+        //tool.equals(item.superaxe)
+        Player player = event.getPlayer();
+        ItemStack tool = player.getInventory().getItemInMainHand();
+        Block block = event.getBlock();
+        String type = block.getType().name();
+        if (!player.getGameMode().equals(GameMode.CREATIVE) && tool.equals(item.superaxe) && type.endsWith("_LOG") && (!player.isSneaking() || !config.getBoolean("sneak-ignore", Objects.requireNonNull(config.getDefaults()).getBoolean("sneak-ignore")))) {
+
+            if (type.startsWith("STRIPPED_")) {
+                type = type.substring(9);
+            }
+
+            List<Block> logs = m.getLogs(block.getLocation(), type);
+            logs.remove(block);
+            if (!config.getBoolean("trees-have-leaves", Objects.requireNonNull(config.getDefaults()).getBoolean("trees-have-leaves")) || m.hasLeaves(logs, type.substring(0, type.length() - 4) + "_LEAVES")) {
+
+                if (config.getBoolean("damage-per-block", config.getDefaults().getBoolean("damage-per-block"))) {
+
+                    Damageable meta = (Damageable) tool.getItemMeta();
+                    assert meta != null;
+                    int dur = tool.getType().getMaxDurability() - meta.getDamage() - 1;
+                    if (logs.size() > dur) {
+                        logs = logs.subList(0, dur);
+                    }
+                    meta.setDamage(meta.getDamage() + logs.size());
+                    tool.setItemMeta(meta);
+
+                }
+
+                for (Block log : logs) {
+                    log.breakNaturally();
+                }
+            }
+        }
+    }
+}
